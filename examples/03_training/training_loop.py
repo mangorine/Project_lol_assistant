@@ -187,7 +187,7 @@ def demonstrate_model_saving():
     
     # Load model
     new_model = SimpleClassifier(20, 3)
-    new_model.load_state_dict(torch.load(save_path))
+    new_model.load_state_dict(torch.load(save_path, map_location='cpu'))
     print(f"Model loaded from {save_path}")
     
     # Verify

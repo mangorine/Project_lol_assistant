@@ -188,7 +188,7 @@ def demonstrate_partial_loading():
     print(f"Saved pretrained weights to {save_path}")
     
     # Load only feature weights into model2
-    pretrained_dict = torch.load(save_path)
+    pretrained_dict = torch.load(save_path, map_location='cpu')
     model2_dict = model2.state_dict()
     
     # Filter out classifier weights
