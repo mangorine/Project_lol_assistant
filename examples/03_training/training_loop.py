@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+import tempfile
+import os
 
 
 class SimpleClassifier(nn.Module):
@@ -179,7 +181,7 @@ def demonstrate_model_saving():
     model = SimpleClassifier(20, 3)
     
     # Save model
-    save_path = "/tmp/model.pth"
+    save_path = os.path.join(tempfile.gettempdir(), "model.pth")
     torch.save(model.state_dict(), save_path)
     print(f"Model saved to {save_path}")
     

@@ -6,6 +6,8 @@ This script demonstrates transfer learning concepts in PyTorch.
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import tempfile
+import os
 
 
 class PretrainedModel(nn.Module):
@@ -181,7 +183,7 @@ def demonstrate_partial_loading():
     model2 = FineTunedModel(model1, num_classes=5)
     
     # Save model1 weights
-    save_path = "/tmp/pretrained_weights.pth"
+    save_path = os.path.join(tempfile.gettempdir(), "pretrained_weights.pth")
     torch.save(model1.state_dict(), save_path)
     print(f"Saved pretrained weights to {save_path}")
     

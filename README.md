@@ -15,6 +15,13 @@ A comprehensive repository for learning and experimenting with PyTorch, covering
 
 This repository is designed to help you learn PyTorch through hands-on examples. Each script is self-contained and demonstrates specific concepts with clear explanations.
 
+### Quick Start
+
+Run the quick start guide to see all available examples:
+```bash
+python examples/quickstart.py
+```
+
 ### Prerequisites
 
 - Python 3.8 or higher
@@ -32,6 +39,11 @@ cd Deepl_fun
 2. Install dependencies:
 ```bash
 pip install -r requirements.txt
+```
+
+3. Verify installation:
+```bash
+python check_installation.py
 ```
 
 ## 📁 Repository Structure
