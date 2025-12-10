@@ -61,15 +61,145 @@ def fetch_raw_matchups(CHAMP: str, RANK: str) -> None:
                         )
                     except Exception:
                         continue
-        if extracted_data:
-            df = pd.DataFrame(extracted_data)
-            df = df.sort_values(by=["Value", "Matchup Type"], ascending=[True, True])
-            df = df.drop_duplicates()
-            output_filename = f"data/raw_matchups_{CHAMP}_{RANK}.csv"
-            df.to_csv(output_filename, index=False, sep=";")
+    if extracted_data:
+        df = pd.DataFrame(extracted_data)
+        df = df.sort_values(by=["Matchup Type", "Value"], ascending=[True, False])
+        df = df.drop_duplicates()
+        output_filename = f"data/raw_matchups/{CHAMP}_{RANK}.csv"
+        df.to_csv(output_filename, index=False, sep=";")
+        # print(f"Data saved to {output_filename}")
+    else:
+        print("No data extracted.")
+
+
+def get_champion_slugs():
+    try:
+        # 1. Récupérer le numéro du dernier patch officiel (ex: "14.23.1")
+        version_url = "https://ddragon.leagueoflegends.com/api/versions.json"
+        versions = requests.get(version_url).json()
+        latest_version = versions[0]
+        print(f"🔹 Patch détecté : {latest_version}")
+
+        champs_url = f"https://ddragon.leagueoflegends.com/cdn/{latest_version}/data/en_US/champion.json"
+        data = requests.get(champs_url).json()
+
+        champion_list = []
+
+        for champ_id, champ_info in data["data"].items():
+
+            slug = champ_id.lower()
+
+            # exceptions manuelles
+            if slug == "monkeyking":
+                slug = "wukong"
+            if slug == "renata":
+                slug = "renata"
+
+            champion_list.append(slug)
+
+        champion_list.sort()
+        return champion_list
+
+    except Exception as e:
+        print(f"Erreur lors de la récupération : {e}")
+        return []
+
+
+def fetch_combos(CHAMP: str, RANK: str):
+    URL = f"https://www.leagueofgraphs.com/champions/counters/{CHAMP}/{RANK}"
+    print(f"1️⃣  Connexion à {URL} ...")
+
+    try:
+        response = requests.get(URL, headers=HEADERS)
+        # On utilise lxml si possible (plus rapide), sinon html.parser
+        try:
+            soup = BeautifulSoup(response.text, "lxml")
+        except:
+            soup = BeautifulSoup(response.text, "html.parser")
+
+        extracted_data = []
+
+        # Recherche de la section
+        titles = soup.find_all("h3", class_="box-title")
+        target_table = None
+
+        print(f"2️⃣  Recherche de la section 'Best With' parmi {len(titles)} titres...")
+
+        for title in titles:
+            if "best with" in title.get_text().strip().lower():
+                print(f"   ✅ Section trouvée : '{title.get_text().strip()}'")
+                target_table = title.find_next("table")
+                break
+
+        if target_table:
+            # On prend toutes les lignes, y compris celles dans tbody
+            rows = target_table.find_all("tr")
+            print(f"3️⃣  Tableau trouvé. Analyse de {len(rows)} lignes...")
+
+            for i, row in enumerate(rows):
+                # On saute les entêtes (souvent pas de td, ou th)
+                cells = row.find_all("td")
+                if not cells:
+                    continue
+
+                ally_name = "Inconnu"
+                # On regarde d'abord l'image (Naafiri)
+                img = row.find("img")
+                if img and img.get("alt"):
+                    ally_name = img.get("alt").strip()
+                # Sinon le texte
+                elif row.find("span", class_="name"):
+                    ally_name = row.find("span", class_="name").get_text().strip()
+
+                # On cherche directement le texte "+5.1%" dans la classe progressBarTxt
+                score_div = row.find("div", class_="progressBarTxt")
+                synergy_score = 0.0
+
+                if score_div:
+                    text_score = score_div.get_text().strip()  # ex: "+5.1%"
+                    # On nettoie le texte pour garder juste le chiffre (5.1)
+                    clean_score = re.sub(r"[^\d.-]", "", text_score)
+                    try:
+                        synergy_score = float(clean_score)
+                    except:
+                        synergy_score = 0.0
+                else:
+                    # Plan B : Si pas de texte, on tente l'attribut data-value
+                    # Utile si le texte est caché
+                    pbar = row.find("progressbar")
+                    if pbar and pbar.get("data-value"):
+                        try:
+                            raw = float(pbar.get("data-value"))
+                            synergy_score = raw * 100
+                        except:
+                            pass
+
+                # On ne garde que si on a un nom valide
+                if ally_name != "Inconnu":
+                    extracted_data.append(
+                        {"Champion": CHAMP, "Ally": ally_name, "Value": synergy_score}
+                    )
+
+            if extracted_data:
+                df = pd.DataFrame(extracted_data)
+                df = df.sort_values(by="Score", ascending=False)
+                filename = f"data/combos/{CHAMP}_{RANK}.csv"
+                df.to_csv(filename, index=False, sep=";")
+            else:
+                print("no data extracted for combos.")
+
         else:
-            print("No data extracted.")
+            print("Section 'Best With' introuvable (Vérifiez l'anglais/headers).")
+
+    except Exception as e:
+        print(f"Erreur critique : {e}")
 
 
-if __name__ == "__main__":
-    fetch_raw_matchups("kayle", "bronze")
+ranks = ["iron", "bronze", "silver", "gold", "platinum", "diamond", "master"]
+all_champs = get_champion_slugs()
+
+if "__main__" == __name__:
+    for rank in ranks:
+        for champ in all_champs:
+            fetch_raw_matchups(champ, rank)
+            fetch_combos(champ, rank)
