@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
+import re
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -10,7 +11,6 @@ HEADERS = {
 
 def fetch_raw_matchups(CHAMP: str, RANK: str) -> None:
     URL = f"https://www.leagueofgraphs.com/champions/counters/{CHAMP}/{RANK}"
-    print(f"Connexion à {URL} ...")
 
     response = requests.get(URL, headers=HEADERS)
     soup = BeautifulSoup(response.text, "html.parser")
@@ -107,7 +107,6 @@ def get_champion_slugs():
 
 def fetch_combos(CHAMP: str, RANK: str):
     URL = f"https://www.leagueofgraphs.com/champions/counters/{CHAMP}/{RANK}"
-    print(f"1️⃣  Connexion à {URL} ...")
 
     try:
         response = requests.get(URL, headers=HEADERS)
@@ -123,18 +122,14 @@ def fetch_combos(CHAMP: str, RANK: str):
         titles = soup.find_all("h3", class_="box-title")
         target_table = None
 
-        print(f"2️⃣  Recherche de la section 'Best With' parmi {len(titles)} titres...")
-
         for title in titles:
             if "best with" in title.get_text().strip().lower():
-                print(f"   ✅ Section trouvée : '{title.get_text().strip()}'")
                 target_table = title.find_next("table")
                 break
 
         if target_table:
             # On prend toutes les lignes, y compris celles dans tbody
             rows = target_table.find_all("tr")
-            print(f"3️⃣  Tableau trouvé. Analyse de {len(rows)} lignes...")
 
             for i, row in enumerate(rows):
                 # On saute les entêtes (souvent pas de td, ou th)
@@ -142,6 +137,7 @@ def fetch_combos(CHAMP: str, RANK: str):
                 if not cells:
                     continue
 
+                # --- NOM DU CHAMPION ---
                 ally_name = "Inconnu"
                 # On regarde d'abord l'image (Naafiri)
                 img = row.find("img")
@@ -151,7 +147,9 @@ def fetch_combos(CHAMP: str, RANK: str):
                 elif row.find("span", class_="name"):
                     ally_name = row.find("span", class_="name").get_text().strip()
 
+                # --- SCORE (La méthode Texte) ---
                 # On cherche directement le texte "+5.1%" dans la classe progressBarTxt
+                # C'est visible dans votre code HTML : <div class="progressBarTxt">+5.1%</div>
                 score_div = row.find("div", class_="progressBarTxt")
                 synergy_score = 0.0
 
@@ -170,23 +168,29 @@ def fetch_combos(CHAMP: str, RANK: str):
                     if pbar and pbar.get("data-value"):
                         try:
                             raw = float(pbar.get("data-value"))
-                            synergy_score = raw * 100
+                            synergy_score = raw * 100 if abs(raw) < 1 else raw
                         except:
                             pass
 
+                # --- VALIDATION ---
                 # On ne garde que si on a un nom valide
                 if ally_name != "Inconnu":
                     extracted_data.append(
-                        {"Champion": CHAMP, "Ally": ally_name, "Value": synergy_score}
+                        {
+                            "Champion": CHAMP,
+                            "Ally": ally_name,
+                            "Score": round(synergy_score, 2),
+                        }
                     )
 
+            # --- SAUVEGARDE ---
             if extracted_data:
                 df = pd.DataFrame(extracted_data)
                 df = df.sort_values(by="Score", ascending=False)
                 filename = f"data/combos/{CHAMP}_{RANK}.csv"
                 df.to_csv(filename, index=False, sep=";")
             else:
-                print("no data extracted for combos.")
+                print("no data extracted.")
 
         else:
             print("Section 'Best With' introuvable (Vérifiez l'anglais/headers).")
@@ -199,7 +203,5 @@ ranks = ["iron", "bronze", "silver", "gold", "platinum", "diamond", "master"]
 all_champs = get_champion_slugs()
 
 if "__main__" == __name__:
-    for rank in ranks:
-        for champ in all_champs:
-            fetch_raw_matchups(champ, rank)
-            fetch_combos(champ, rank)
+    fetch_raw_matchups("kayle", "diamond")
+    fetch_combos("irelia", "diamond")
