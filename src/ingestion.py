@@ -1,9 +1,8 @@
 import os
 import json
-import requests
-import time
 from bs4 import BeautifulSoup
-from riotwatcher import LolWatcher, ApiError
+import youtube_transcript_api
+from youtube_transcript_api import TranscriptsDisabled, YouTubeTranscriptApi
 
 BASE_DATA_PATH = "data/dragontail-16.2.1"
 VERSION_LOL = "16.2.1"
@@ -134,7 +133,7 @@ def process_champions_detailed():
         passive_desc = clean_html(champ['passive']['description'])
         passive_text = f"PASSIVE - {champ['passive']['name']}: {passive_desc}"
         
-        #Sorts (Q, W, E, R)
+        # Sorts (Q, W, E, R)
         spells_text = ""
         keys = ['Q', 'W', 'E', 'R']
         
@@ -180,18 +179,68 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 }
 
+VIDEO_DATABASE = [
+    {"id": "Jh-eYTB1Ij0", "title": "Split Pushing Guide", "category": "Macro"},
+    {"id": "GmGT1aQj1ek", "title": "The Ultimate Wave Management Guide", "category": "Laning"},
+    {"id": "L7qPSGmS9ik", "title": "How to Trade Like a Challenger", "category": "Laning"},
+    {"id": "cL6cWGQtocw", "title": "Minion Wave Control for Every Lane", "category": "Laning"},
+    {"id": "ZzKpPJ_BNHM", "title": "How to Cs Like a Challenger", "category": "Laning"},
+    {"id": "HN2qjqeGAFM", "title": "How to End Games (Macro)", "category": "Macro"},
+    {"id": "34kHa32NIKQ", "title": "Mid Game Macro Guide", "category": "Macro"},
+    {"id": "YwibbNDg7kM", "title": "Side Lane Macro", "category": "Macro"},
+    {"id": "MjXxRn5sQiQ", "title": "Jungle Tracking Guide", "category": "Jungle"},
+    {"id": "bYU3Y4G4uKc", "title": "How to Teamfight", "category": "Teamfight"},
+    {"id": "1b2uLRx8miE", "title": "ADC Positioning Guide", "category": "Teamfight"},
+    {"id": "3qAr9J2lBhw", "title": "Dodge Skillshots", "category": "Micro"},
+    {"id": "ApJLn9Iaq9Q", "title": "How to Stop Tilting", "category": "Psychology"}
+]
 
-def scrape_mobafire_guide(champion_name):
-    """Scraping léger pour la stratégie (optionnel)."""
-    url = f"https://www.mobafire.com/league-of-legends/champion/{champion_name}"
+def fetch_clean_transcript(video_id):
+    """Récupère et nettoie la transcription d'une vidéo."""
     try:
-        time.sleep(2)
-        response = requests.get(url, headers=HEADERS)
-        soup = BeautifulSoup(response.text, "html.parser")
+        transcript = YouTubeTranscriptApi().fetch(video_id)
+        
+        full_text = " ".join([t.text for t in transcript])
+        
+        # Nettoyage basique
+        full_text = full_text.replace("\n", " ")
+        full_text = full_text.replace("  ", " ")
+        return full_text
+        
+    except TranscriptsDisabled:
+        print(f"Sous-titres désactivés pour la vidéo {video_id}")
         return None
     except Exception as e:
-        print(f"Erreur scraping Mobafire pour {champion_name}: {e}")
+        print(f"Erreur {video_id}: {str(e)}")
         return None
+
+def process_youtube_videos():
+    print(f"Démarrage de l'extraction de {len(VIDEO_DATABASE)} vidéos...")
+    knowledge_base = []
+    
+    for video in VIDEO_DATABASE:
+        text = fetch_clean_transcript(video['id'])
+        
+        if text:
+            chunk_size = 1000
+            overlap = 100
+            
+            for i in range(0, len(text), chunk_size - overlap):
+                chunk = text[i:i + chunk_size]
+                
+                if len(chunk) < 100 :
+                    continue
+                
+                doc = {
+                    "id": f"yt_{video['id']}_{i}",
+                    "source": "SkillCapped_YouTube",
+                    "type": "coach_guide",
+                    "category": video['category'],  # Important pour filtrer plus tard !
+                    "title": video['title'],
+                    "content": f"COACH ADVICE ({video['category']} - {video['title']}): {chunk}"
+                }
+                knowledge_base.append(doc)
+    return knowledge_base
 
 
 if __name__ == "__main__":
@@ -199,11 +248,13 @@ if __name__ == "__main__":
     runes_docs = process_runes()
     items_docs = process_items()
     champs_docs = process_champions_detailed()
+    videos_docs = process_youtube_videos()
     all_local_data.extend(runes_docs)
     all_local_data.extend(items_docs)
     all_local_data.extend(champs_docs)
+    all_local_data.extend(videos_docs)
 
     output_file = "data/processed_knowledge.json"
     with open(output_file, "w", encoding='utf-8') as f:
         json.dump(all_local_data, f, ensure_ascii=False, indent=4)
-    print(f"Total documents extraits: {len(runes_docs) + len(items_docs) + len(champs_docs)}")
+    print(f"Total documents extraits: {len(runes_docs) + len(items_docs) + len(champs_docs) + len(videos_docs)}")
