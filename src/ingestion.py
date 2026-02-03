@@ -192,7 +192,9 @@ VIDEO_DATABASE = [
     {"id": "bYU3Y4G4uKc", "title": "How to Teamfight", "category": "Teamfight"},
     {"id": "1b2uLRx8miE", "title": "ADC Positioning Guide", "category": "Teamfight"},
     {"id": "3qAr9J2lBhw", "title": "Dodge Skillshots", "category": "Micro"},
-    {"id": "ApJLn9Iaq9Q", "title": "How to Stop Tilting", "category": "Psychology"}
+    {"id": "ApJLn9Iaq9Q", "title": "Low Elo Macro", "category": "Psychology"},
+    {"id": "l8vZCDhT9JE", "title": "TopLane Matchups", "category": "Laning"},
+    {"id": "gPJ0zUI2yyU", "title": "TopLane Fundamentals", "category": "Laning"}
 ]
 
 def fetch_clean_transcript(video_id):
