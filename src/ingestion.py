@@ -30,7 +30,6 @@ def clean_html(html_text):
     """Nettoie les balises HTML (<br>, <font>, <active>...) des descriptions Riot."""
     if not html_text:
         return "Aucune description."
-    # On remplace les <br> par des sauts de ligne pour la lisibilité
     text = html_text.replace("<br>", "\n").replace("<br />", "\n")
     soup = BeautifulSoup(text, "html.parser")
     return soup.get_text().strip()
@@ -79,10 +78,9 @@ def process_items():
         if not info.get('name'):
             continue
 
-        # Nettoyage description
         desc = clean_html(info.get('description', ''))
         
-        # Stats (ex: {'FlatPhysicalDamageMod': 40})
+        # (ex: {'FlatPhysicalDamageMod': 40})
         stats_text = ", ".join([f"{k}: {v}" for k, v in info.get('stats', {}).items()])
         
         content = (
@@ -116,19 +114,14 @@ def process_champions_detailed():
 
     docs = []
     
-    # Pour chaque champion dans la liste
     for champ_id in summary_data['data'].keys():
-        # 2. On charge le fichier DÉTAILLÉ du champion
-        # Fichier situé dans data/en_US/champion/{Nom}.json
         detail_data = load_json(f"{champ_id}.json", subdir="champion")
 
         if not detail_data:
             continue
 
-        # Riot encapsule les données dans data[champ_id]
         champ = detail_data['data'][champ_id]
         
-        # --- A. Stats de base ---
         base_stats = (
             f"HP: {champ['stats']['hp']} (+{champ['stats']['hpperlevel']}/lvl)\n"
             f"Mana: {champ['stats']['mp']} (+{champ['stats']['mpperlevel']}/lvl)\n"
@@ -138,11 +131,10 @@ def process_champions_detailed():
             f"Attack Range: {champ['stats']['attackrange']}"
         )
         
-        # --- B. Passif ---
         passive_desc = clean_html(champ['passive']['description'])
         passive_text = f"PASSIVE - {champ['passive']['name']}: {passive_desc}"
         
-        # --- C. Sorts (Q, W, E, R) ---
+        #Sorts (Q, W, E, R)
         spells_text = ""
         keys = ['Q', 'W', 'E', 'R']
         
@@ -150,14 +142,9 @@ def process_champions_detailed():
             key = keys[idx]
             spell_desc = clean_html(spell['description'])
             
-            # Récupération des données variables ("burn" = valeurs pré-calculées par niveau comme 60/70/80)
             cooldown = spell.get('cooldownBurn', 'N/A')
             cost = spell.get('costBurn', '0')
             range_val = spell.get('rangeBurn', 'N/A')
-
-            # Info-bulle détaillée (Tooltip)
-            # Riot utilise des variables {{ e1 }} dans les tooltips.
-            # Pour un RAG simple, on garde le texte descriptif général qui est souvent plus clair sémantiquement.
             
             spells_text += (
                 f"\n--- SPELL {key}: {spell['name']} ---\n"
@@ -167,7 +154,6 @@ def process_champions_detailed():
                 f"Description: {spell_desc}\n"
             )
 
-        # Assemblage final du document Champion
         full_content = (
             f"CHAMPION: {champ['name']} ({champ['title']})\n"
             f"LORE: {champ['lore']}\n"
