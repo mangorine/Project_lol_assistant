@@ -5,6 +5,8 @@ from chromadb import Documents, EmbeddingFunction, Embeddings
 from dotenv import load_dotenv
 from vector_db import GoogleGenAIEmbeddingFunction
 
+load_dotenv()
+
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PERSIST_DIRECTORY = "data/chroma_db"
 

@@ -1,5 +1,7 @@
 # LOL RAG assistant
 
+premiere version "manuelle", je projette d'apprendre et d'utiliser langchain.
+
 ## Ingestion
 
 On process des donnees DW en locale de datadragon ( data officielles de riot games sur les donnees du jeu ). [Latest](https://ddragon.leagueoflegends.com/cdn/dragontail-16.2.1.tgz)
