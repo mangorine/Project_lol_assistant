@@ -155,15 +155,12 @@ def fetch_combos(CHAMP: str, RANK: str):
 
                 if score_div:
                     text_score = score_div.get_text().strip()  # ex: "+5.1%"
-                    # On nettoie le texte pour garder juste le chiffre (5.1)
                     clean_score = re.sub(r"[^\d.-]", "", text_score)
                     try:
                         synergy_score = float(clean_score)
                     except:
                         synergy_score = 0.0
                 else:
-                    # Plan B : Si pas de texte, on tente l'attribut data-value
-                    # Utile si le texte est caché
                     pbar = row.find("progressbar")
                     if pbar and pbar.get("data-value"):
                         try:
@@ -172,8 +169,6 @@ def fetch_combos(CHAMP: str, RANK: str):
                         except:
                             pass
 
-                # --- VALIDATION ---
-                # On ne garde que si on a un nom valide
                 if ally_name != "Inconnu":
                     extracted_data.append(
                         {
@@ -183,7 +178,6 @@ def fetch_combos(CHAMP: str, RANK: str):
                         }
                     )
 
-            # --- SAUVEGARDE ---
             if extracted_data:
                 df = pd.DataFrame(extracted_data)
                 df = df.sort_values(by="Score", ascending=False)

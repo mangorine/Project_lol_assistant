@@ -1,29 +1,28 @@
 # LOL RAG assistant
 
-premiere version "manuelle", je projette d'apprendre et d'utiliser langchain.
+Project LoL Assistant is a personal project exploring Retrieval-Augmented Generation (RAG) applied to a concrete and non-trivial use case: assisting players in the game League of Legends through contextual, knowledge-grounded responses.
 
 ## Ingestion
 
-On process des donnees DW en locale de datadragon ( data officielles de riot games sur les donnees du jeu ). [Latest](https://ddragon.leagueoflegends.com/cdn/dragontail-16.2.1.tgz)
+I use official recent data of the game from RIOT GAMES. [Latest](https://ddragon.leagueoflegends.com/cdn/dragontail-16.2.1.tgz)
 
-On ajoute a cela du texte de subtitles de videos youtube. Des difficultes peuvent etre rencontres due au limitations de youtube qui peut ban votre IP si vous faites trop de requetes. Comme solution temporaire, j'utilise un VPN pour changer d'IPs mais youtube ban plus rapidement les IPs clouds.
+To this I add texts from subtitles of a custom selection of "guide" videos from youtube. 
 
-## Vectorisation ( chunking et embedding )
+## Vectorisation
 
-J'utilise un modele d'encodage de google : text-embedding-004. Le code lit le fichier data/processed_knowledge.json creer par ingestion.py, et stocke les vecteurs dans data/chroma_db et utilise la methode upsert qui permet d'update.
+Uses google text-embedding-004 model. 
 
-Lancer vector_db uniquement pour initialiser ou update les data. 
-
-Le code n'est pas optimise pour s'update souvent en effet a chaque fois qu'on essaie d'ajouter des donnees on va relire tout le JSON pour encoder, c'est une amelioration a faire.
+The code is poorly optimized, everytime an update is made in the database's json it reads the whole thing and encodes everything one more time.
 
 ## Chatbot
 
-Uses 5 sources.
-
 Gemini 2-5 flash.
 
-Tres bon repondre a des questions courtes mais s'embrouille quand il s'agit d'expliquer des concepts compliques meme avec les sources appropriees.
+Is really good to answer simple questions but struggles to give the correct answer when asked about complex concept and strategies of the game such as macro timings and mid game decision making even when fetching semanticly coherent documents from database. 
 
+## Future improvements
+
+- Using langchain for more complex architectures 
 
 
 
