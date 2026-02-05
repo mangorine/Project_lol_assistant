@@ -106,7 +106,7 @@ def process_champions_detailed():
     """
     print("Traitement détaillé des Champions (cela peut prendre quelques secondes)...")
     
-    # 1. On charge la liste sommaire pour avoir les noms/IDs
+    # On charge la liste sommaire pour avoir les noms/IDs
     summary_data = load_json("champion.json")
     if not summary_data:
         return []
