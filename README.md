@@ -16,6 +16,14 @@ Lancer vector_db uniquement pour initialiser ou update les data.
 
 Le code n'est pas optimise pour s'update souvent en effet a chaque fois qu'on essaie d'ajouter des donnees on va relire tout le JSON pour encoder, c'est une amelioration a faire.
 
+## Chatbot
+
+Uses 5 sources.
+
+Gemini 2-5 flash.
+
+Tres bon repondre a des questions courtes mais s'embrouille quand il s'agit d'expliquer des concepts compliques meme avec les sources appropriees.
+
 
 
 
